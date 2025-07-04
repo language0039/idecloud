@@ -1,0 +1,2 @@
+[submodule "lib/vscode"]
+	url = https://github.com/language0039/IntelliDev.git
