@@ -1,0 +1,90 @@
+Remove VS Code branding from welcome screen content
+
+This patch removes Microsoft VS Code branding from the welcome screen and replaces it with
+generic development environment content.
+
+Index: code-server/lib/vscode/src/vs/workbench/contrib/welcomeGettingStarted/common/gettingStartedContent.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/welcomeGettingStarted/common/gettingStartedContent.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/welcomeGettingStarted/common/gettingStartedContent.ts
+@@ -356,8 +356,8 @@ export const content: GettingStartedWal
+ 
+ 	{
+ 		id: 'SetupWeb',
+-		title: localize('gettingStarted.setupWeb.title', "Get Started with VS Code for the Web"),
+-		description: localize('gettingStarted.setupWeb.description', "Customize your editor, learn the basics, and start coding"),
++		title: localize('gettingStarted.setupWeb.title', "Get Started with Your Development Environment"),
++		description: localize('gettingStarted.setupWeb.description', "Customize your editor, learn the basics, and start coding"),
+ 		isFeatured: true,
+ 		icon: setupIcon,
+ 		when: 'isWeb',
+@@ -702,8 +702,8 @@ export const content: GettingStartedWal
+ 	},
+ 	{
+ 		id: `${NEW_WELCOME_EXPERIENCE}`,
+-		title: localize('gettingStarted.new.title', "Get started with VS Code"),
+-		description: localize('gettingStarted.new.description', "Supercharge coding with AI"),
++		title: localize('gettingStarted.new.title', "Get started with your development environment"),
++		description: localize('gettingStarted.new.description', "Customize your coding environment"),
+ 		isFeatured: false,
+ 		icon: setupIcon,
+ 		when: '!isWeb',
+@@ -760,8 +760,8 @@ export const content: GettingStartedWal
+ 
+ Index: code-server/lib/vscode/product.json
+===================================================================
+--- code-server.orig/lib/vscode/product.json
++++ code-server/lib/vscode/product.json
+@@ -1,19 +1,19 @@
+ {
+-	"nameShort": "Code - OSS",
+-	"nameLong": "Code - OSS",
+-	"applicationName": "code-oss",
+-	"dataFolderName": ".vscode-oss",
+-	"win32MutexName": "vscodeoss",
++	"nameShort": "IDECloud",
++	"nameLong": "IDECloud Development Environment",
++	"applicationName": "idecloud",
++	"dataFolderName": ".idecloud",
++	"win32MutexName": "idecloud",
+ 	"licenseName": "MIT",
+-	"licenseUrl": "https://github.com/microsoft/vscode/blob/main/LICENSE.txt",
+-	"serverLicenseUrl": "https://github.com/microsoft/vscode/blob/main/LICENSE.txt",
++	"licenseUrl": "https://github.com/your-org/idecloud/blob/main/LICENSE.txt",
++	"serverLicenseUrl": "https://github.com/your-org/idecloud/blob/main/LICENSE.txt",
+ 	"serverGreeting": [],
+ 	"serverLicense": [],
+ 	"serverLicensePrompt": "",
+-	"serverApplicationName": "code-server-oss",
+-	"serverDataFolderName": ".vscode-server-oss",
+-	"tunnelApplicationName": "code-tunnel-oss",
+-	"win32DirName": "Microsoft Code OSS",
+-	"win32NameVersion": "Microsoft Code OSS",
+-	"win32RegValueName": "CodeOSS",
++	"serverApplicationName": "idecloud-server",
++	"serverDataFolderName": ".idecloud-server",
++	"tunnelApplicationName": "idecloud-tunnel",
++	"win32DirName": "IDECloud",
++	"win32NameVersion": "IDECloud",
++	"win32RegValueName": "IDECloud",
+ 	"win32x64AppId": "{{D77B7E06-80BA-4137-BCF4-654B95CCEBC5}",
+ 	"win32arm64AppId": "{{D1ACE434-89C5-48D1-88D3-E2991DF85475}",
+ 	"win32x64UserAppId": "{{CC6B787D-37A0-49E8-AE24-8559A032BE0C}",
+@@ -23,12 +23,12 @@
+ 	"win32ShellNameShort": "C&ode - OSS",
+ 	"win32TunnelServiceMutex": "vscodeoss-tunnelservice",
+ 	"win32TunnelMutex": "vscodeoss-tunnel",
+-	"darwinBundleIdentifier": "com.visualstudio.code.oss",
++	"darwinBundleIdentifier": "com.idecloud.editor",
+ 	"darwinProfileUUID": "47827DD9-4734-49A0-AF80-7E19B11495CC",
+ 	"darwinProfilePayloadUUID": "CF808BE7-53F3-46C6-A7E2-7EDB98A5E959",
+-	"linuxIconName": "code-oss",
++	"linuxIconName": "idecloud",
+ 	"licenseFileName": "LICENSE.txt",
+-	"reportIssueUrl": "https://github.com/microsoft/vscode/issues/new",
++	"reportIssueUrl": "https://github.com/your-org/idecloud/issues/new",
+ 	"nodejsRepository": "https://nodejs.org",
+-	"urlProtocol": "code-oss",
++	"urlProtocol": "idecloud",
+ 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/",
+ } 
