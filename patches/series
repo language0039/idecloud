@@ -16,7 +16,7 @@ sourcemaps.diff
 external-file-actions.diff
 telemetry.diff
 cli-window-open.diff
-getting-started.diff
+remove-vscode-branding.diff
 keepalive.diff
 clipboard.diff
 display-language.diff
