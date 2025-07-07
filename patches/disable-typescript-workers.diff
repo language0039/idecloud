@@ -1,0 +1,65 @@
+--- a/build/lib/tsb/transpiler.ts
++++ b/build/lib/tsb/transpiler.ts
+@@ -69,7 +69,8 @@ if (!worker_threads.isMainThread) {
+ class TranspileWorker {
+ 	static pool = 1;
+ 	readonly id = TranspileWorker.pool++;
+-	private readonly _worker = new worker_threads.Worker(__filename);
++	// PATCH: Disable worker creation to prevent memory issues
++	private readonly _worker: any = null;
+ 	private _pending?: [resolve: Function, reject: Function, files: Vinyl[], options: ts.TranspileOptions, t1: number];
+ 	private readonly _durations: number[] = [];
+ 
+@@ -147,7 +148,8 @@ export class TscTranspiler {
+ 	constructor(
+ 		logFn: (topic: string, message: string) => void,
+ 		private readonly _onError: (err: any) => void,
+-		private static readonly P = Math.floor(cpus().length * .5);
++		// PATCH: Force single-threaded compilation (P = 0 means no workers)
++		private static readonly P = 0;
+ 		configFilePath: string,
+ 		private readonly _cmdLine: ts.ParsedCommandLine
+ 	) {
+-		logFn('Transpile', `will use ${TscTranspiler.P} transpile worker`);
++		logFn('Transpile', `will use single-threaded compilation (workers disabled)`);
+ 		this._outputFileNames = new OutputFileNameOracle(_cmdLine, configFilePath);
+ 	}
+@@ -173,8 +175,12 @@ export class TscTranspiler {
+ 		if (this._queue.length === 0) {
+ 			// no work...
+ 			return;
+ 		}
++		// PATCH: Skip worker creation entirely, process synchronously
++		if (TscTranspiler.P === 0) {
++			this._processSynchronously();
++			return;
++		}
+ 
+ 		// kinda LAZYily create workers
+ 		if (this._workerPool.length === 0) {
+@@ -211,6 +217,25 @@ export class TscTranspiler {
+ 			this._allJobs.push(job);
+ 		}
+ 	}
++
++	// PATCH: Add synchronous processing method
++	private _processSynchronously(): void {
++		while (this._queue.length > 0) {
++			const files = this._queue.splice(0, 10); // Process in small batches
++			for (const file of files) {
++				if (this._cmdLine.options.noEmit) {
++					continue;
++				}
++				try {
++					const outPath = this._outputFileNames.getOutputFileName(file.path);
++					const result = transpile(String(file.contents), { compilerOptions: this._cmdLine.options });
++					if (result.diag.length === 0 && this.onOutfile) {
++						this.onOutfile(new Vinyl({ path: outPath, base: this._cmdLine.options.outDir ?? file.base, contents: Buffer.from(result.jsSrc) }));
++					}
++				} catch (err) {
++					this._onError(err);
++				}
++			}
++		}
++	}
+ } 

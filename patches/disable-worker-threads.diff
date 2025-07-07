@@ -1,0 +1,113 @@
+--- a/build/lib/tsb/transpiler.js
++++ b/build/lib/tsb/transpiler.js
+@@ -69,7 +69,8 @@ if (!node_worker_threads_1.default.isMainThread) {
+ class TranspileWorker {
+     static pool = 1;
+     id = TranspileWorker.pool++;
+-    _worker = new node_worker_threads_1.default.Worker(__filename);
++    // PATCH: Disable worker creation to prevent memory issues
++    _worker = null;
+     _pending;
+     _durations = [];
+     constructor(outFileFn) {
+@@ -147,7 +148,8 @@ class TscTranspiler {
+     _onError;
+     _cmdLine;
+-    static P = Math.floor((0, node_os_1.cpus)().length * .5);
++    // PATCH: Force single-threaded compilation (P = 0 means no workers)
++    static P = 0;
+     _outputFileNames;
+     onOutfile;
+     _workerPool = [];
+@@ -157,7 +159,7 @@ class TscTranspiler {
+     constructor(logFn, _onError, configFilePath, _cmdLine) {
+         this._onError = _onError;
+         this._cmdLine = _cmdLine;
+-        logFn('Transpile', `will use ${TscTranspiler.P} transpile worker`);
++        logFn('Transpile', `will use single-threaded compilation (workers disabled)`);
+         this._outputFileNames = new OutputFileNameOracle(_cmdLine, configFilePath);
+     }
+     async join() {
+@@ -180,8 +182,12 @@ class TscTranspiler {
+         if (this._queue.length === 0) {
+             // no work...
+             return;
+         }
++        // PATCH: Skip worker creation entirely, process synchronously
++        if (TscTranspiler.P === 0) {
++            this._processSynchronously();
++            return;
++        }
+         // kinda LAZYily create workers
+         if (this._workerPool.length === 0) {
+             for (let i = 0; i < TscTranspiler.P; i++) {
+@@ -217,6 +223,25 @@ class TscTranspiler {
+             this._allJobs.push(job);
+         }
+     }
++    // PATCH: Add synchronous processing method
++    _processSynchronously() {
++        while (this._queue.length > 0) {
++            const files = this._queue.splice(0, 10); // Process in small batches
++            for (const file of files) {
++                if (this._cmdLine.options.noEmit) {
++                    continue;
++                }
++                try {
++                    const outPath = this._outputFileNames.getOutputFileName(file.path);
++                    const result = transpile(String(file.contents), { compilerOptions: this._cmdLine.options });
++                    if (result.diag.length === 0 && this.onOutfile) {
++                        this.onOutfile(new (require('vinyl'))({ path: outPath, base: this._cmdLine.options.outDir ?? file.base, contents: Buffer.from(result.jsSrc) }));
++                    }
++                } catch (err) {
++                    this._onError(err);
++                }
++            }
++        }
++    }
+ }
+ exports.TscTranspiler = TscTranspiler;
+--- a/build/gulpfile.js
++++ b/build/gulpfile.js
+@@ -31,10 +31,12 @@ const compileClientTask = task.define('compile-client', task.series(util.rimraf
+ gulp.task(compileClientTask);
+ 
+-const watchClientTask = task.define('watch-client', task.series(util.rimraf('out'), task.parallel(watchTask('out', false), watchApiProposalNamesTask)));
++// PATCH: Convert parallel to series to avoid memory issues
++const watchClientTask = task.define('watch-client', task.series(util.rimraf('out'), task.series(watchTask('out', false), watchApiProposalNamesTask)));
+ gulp.task(watchClientTask);
+ 
+ // All
+-const _compileTask = task.define('compile', task.parallel(monacoTypecheckTask, compileClientTask, compileExtensionsTask, compileExtensionMediaTask));
++// PATCH: Convert parallel to series to avoid memory issues  
++const _compileTask = task.define('compile', task.series(monacoTypecheckTask, compileClientTask, compileExtensionsTask, compileExtensionMediaTask));
+ gulp.task(_compileTask);
+ 
+-gulp.task(task.define('watch', task.parallel(/* monacoTypecheckWatchTask, */ watchClientTask, watchExtensionsTask)));
++// PATCH: Convert parallel to series to avoid memory issues
++gulp.task(task.define('watch', task.series(/* monacoTypecheckWatchTask, */ watchClientTask, watchExtensionsTask)));
+--- a/build/node_modules/workerpool/src/WorkerHandler.js
++++ b/build/node_modules/workerpool/src/WorkerHandler.js
+@@ -15,7 +15,8 @@ function WorkerHandler(script, options) {
+   this.terminated = false;
+   this.lastId = 0;
+ 
+-  this.worker = new Worker(script, workerOpts);
++  // PATCH: Disable worker creation to prevent memory issues
++  this.worker = null;
+   this.asyncTaskCreated = true;
+   this.worker.on('message', this.onMessage.bind(this));
+   this.worker.on('error', this.onError.bind(this));
+--- a/build/node_modules/workerpool/src/Pool.js  
++++ b/build/node_modules/workerpool/src/Pool.js
+@@ -45,7 +45,8 @@ function Pool(script, options) {
+   this.script = script || null;
+   this.workers = [];
+   this.tasks = [];
+-  this.maxWorkers = options && options.maxWorkers || Math.max((require('os').cpus().length - 1), 1);
++  // PATCH: Force single-threaded processing
++  this.maxWorkers = 0;
+   this.timeout = options && options.timeout || null;
+   this.isProcessing = false;
+   this.workerTerminateTimeout = options && options.workerTerminateTimeout || 1000;
+ } 

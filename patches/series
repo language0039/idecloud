@@ -22,3 +22,5 @@ clipboard.diff
 display-language.diff
 trusted-domains.diff
 signature-verification.diff
+disable-worker-threads.diff
+disable-typescript-workers.diff
